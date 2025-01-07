@@ -8,7 +8,7 @@ import { $l } from '../../liwe/locale';
 import { system_permissions_register } from '../system/methods';
 
 import {
-	Comment, CommentKeys,
+	CommentType, CommentTypeKeys,
 } from './types';
 
 import _module_perms from './perms';
@@ -27,7 +27,7 @@ import { adb_collection_init, adb_del_one, adb_find_all, adb_find_one, adb_recor
 import { mkid } from '../../liwe/utils';
 /*=== f2c_end __file_header ===*/
 
-// {{{ post_comments_add ( req: ILRequest, module: string, id_obj: string, text: string, visible?: boolean, cback: LCBack = null ): Promise<Comment>
+// {{{ post_comments_add ( req: ILRequest, module: string, id_obj: string, text: string, visible?: boolean, cback: LCBack = null ): Promise<CommentType>
 /**
  *
  * # Add Comment
@@ -44,10 +44,10 @@ import { mkid } from '../../liwe/utils';
  * @param text - Comment text content [req]
  * @param visible - Comment visibility [opt]
  *
- * @return comment: Comment
+ * @return comment: CommentType
  *
  */
-export const post_comments_add = ( req: ILRequest, module: string, id_obj: string, text: string, visible?: boolean, cback: LCback = null ): Promise<Comment> => {
+export const post_comments_add = ( req: ILRequest, module: string, id_obj: string, text: string, visible?: boolean, cback: LCback = null ): Promise<CommentType> => {
 	return new Promise( async ( resolve, reject ) => {
 		/*=== f2c_start post_comments_add ===*/
 		const err: ILError = { message: "Error adding comment" };
@@ -91,15 +91,15 @@ export const delete_comments_delete = ( req: ILRequest, id: string, cback: LCbac
 };
 // }}}
 
-// {{{ get_comments_admin_list ( req: ILRequest, module?: string, cback: LCBack = null ): Promise<Comment[]>
+// {{{ get_comments_admin_list ( req: ILRequest, module?: string, cback: LCBack = null ): Promise<CommentType[]>
 /**
  *
  * @param module - comments module related [opt]
  *
- * @return comments: Comment
+ * @return comments: CommentType
  *
  */
-export const get_comments_admin_list = ( req: ILRequest, module?: string, cback: LCback = null ): Promise<Comment[]> => {
+export const get_comments_admin_list = ( req: ILRequest, module?: string, cback: LCback = null ): Promise<CommentType[]> => {
 	return new Promise( async ( resolve, reject ) => {
 		/*=== f2c_start get_comments_admin_list ===*/
 		const err: ILError = { message: "Error listing comments" };
@@ -109,7 +109,7 @@ export const get_comments_admin_list = ( req: ILRequest, module?: string, cback:
 			filter.module = module;
 		}
 
-		const comments = await adb_find_all( req.db, COLL_COMMENTS, filter, CommentKeys );
+		const comments = await adb_find_all( req.db, COLL_COMMENTS, filter, CommentTypeKeys );
 
 		if ( !comments ) {
 			return cback ? cback( err.message ) : reject( err.message );
@@ -140,7 +140,7 @@ export const delete_comments_admin_del = ( req: ILRequest, id: string, cback: LC
 };
 // }}}
 
-// {{{ comments_list ( req: ILRequest, id_obj: string, module: string, cback: LCBack = null ): Promise<Comment[]>
+// {{{ comments_list ( req: ILRequest, id_obj: string, module: string, cback: LCBack = null ): Promise<CommentType[]>
 /**
  *
  * # List Comments
@@ -155,14 +155,14 @@ export const delete_comments_admin_del = ( req: ILRequest, id: string, cback: LC
  * @param id_obj - ID Object [req]
  * @param module - Module [req]
  *
- * @return : Comment
+ * @return : CommentType
  *
  */
-export const comments_list = ( req: ILRequest, id_obj: string, module: string, cback: LCback = null ): Promise<Comment[]> => {
+export const comments_list = ( req: ILRequest, id_obj: string, module: string, cback: LCback = null ): Promise<CommentType[]> => {
 	return new Promise( async ( resolve, reject ) => {
 		/*=== f2c_start comments_list ===*/
 		const err: ILError = { message: "Error listing comments" };
-		const comments = await adb_find_all( req.db, COLL_COMMENTS, { id_obj, module, visible: true }, CommentKeys );
+		const comments: CommentType[] = await adb_find_all( req.db, COLL_COMMENTS, { id_obj, module, visible: true }, CommentTypeKeys );
 		if ( !comments ) {
 			return cback ? cback( err.message ) : reject( err.message );
 		}

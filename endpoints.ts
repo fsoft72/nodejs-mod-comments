@@ -17,7 +17,7 @@ import {
 } from './methods';
 
 import {
-	Comment, CommentKeys,
+	CommentType, CommentTypeKeys,
 } from './types';
 
 /*=== f2c_start __header ===*/
@@ -42,7 +42,7 @@ export const init = ( liwe: ILiWE ) => {
 
 		if ( ___errors.length ) return send_error ( res, { message: `Parameters error: ${___errors.join ( ', ' )}` } );
 
-		post_comments_add ( req, module, id_obj, text, visible, ( err: ILError, comment: Comment ) => {
+		post_comments_add ( req, module, id_obj, text, visible, ( err: ILError, comment: CommentType ) => {
 			if ( err?.quiet ) return;
 			if ( err ) return send_error( res, err );
 
@@ -72,7 +72,7 @@ export const init = ( liwe: ILiWE ) => {
 
 		if ( ___errors.length ) return send_error ( res, { message: `Parameters error: ${___errors.join ( ', ' )}` } );
 
-		get_comments_admin_list ( req, module, ( err: ILError, comments: Comment ) => {
+		get_comments_admin_list ( req, module, ( err: ILError, comments: CommentType ) => {
 			if ( err?.quiet ) return;
 			if ( err ) return send_error( res, err );
 

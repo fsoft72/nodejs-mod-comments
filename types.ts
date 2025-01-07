@@ -3,8 +3,8 @@
 /*=== f2c_start __file ===*/
 
 /*=== f2c_end __file ===*/
-/** Comment */
-export interface Comment {
+/** CommentType */
+export interface CommentType {
 	/** Unique comment identifier */
 	id: string;
 	/** Domain identifier */
@@ -21,7 +21,7 @@ export interface Comment {
 	text: string;
 }
 
-export const CommentKeys = {
+export const CommentTypeKeys = {
 	'id': { type: 'string', priv: false },
 	'domain': { type: 'string', priv: false },
 	'module': { type: 'string', priv: false },
