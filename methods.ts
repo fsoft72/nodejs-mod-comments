@@ -25,6 +25,8 @@ const COLL_COMMENTS = "comments";
 import { system_domain_get_by_session } from '../system/methods';
 import { adb_collection_init, adb_del_one, adb_find_all, adb_find_one, adb_record_add } from '../../liwe/db/arango';
 import { mkid } from '../../liwe/utils';
+import { liwe_event_emit } from '../../liwe/events';
+import { COMMENTS_EVENT_CREATE, COMMENTS_EVENT_DELETE } from './events';
 /*=== f2c_end __file_header ===*/
 
 // {{{ post_comments_add ( req: ILRequest, module: string, id_obj: string, text: string, visible?: boolean, cback: LCBack = null ): Promise<CommentType>
@@ -50,13 +52,16 @@ import { mkid } from '../../liwe/utils';
 export const post_comments_add = ( req: ILRequest, module: string, id_obj: string, text: string, visible?: boolean, cback: LCback = null ): Promise<CommentType> => {
 	return new Promise( async ( resolve, reject ) => {
 		/*=== f2c_start post_comments_add ===*/
+		const domain = await system_domain_get_by_session( req );
 		const err: ILError = { message: "Error adding comment" };
 		const id_user = req.user.id;
 		const id = mkid( 'comment' );
-		const res = await adb_record_add( req.db, COLL_COMMENTS, { id, module, id_obj, text, id_user, visible: visible || true } );
+		const res = await adb_record_add( req.db, COLL_COMMENTS, { id, domain: domain.code, module, id_obj, text, id_user, visible: visible || true } );
 		if ( !res ) {
 			return cback ? cback( err.message ) : reject( err.message );
 		}
+
+		await liwe_event_emit( req, COMMENTS_EVENT_CREATE, { id, domain: domain.code, module, id_obj } );
 
 		return cback ? cback( null, res ) : resolve( res );
 		/*=== f2c_end post_comments_add ===*/
@@ -134,7 +139,12 @@ export const delete_comments_admin_del = ( req: ILRequest, id: string, cback: LC
 		/*=== f2c_start delete_comments_admin_del ===*/
 		const domain = await system_domain_get_by_session( req );
 
+		const comment = await adb_find_one( req.db, COLL_COMMENTS, { id, domain: domain.code } );
 		const res = await adb_del_one( req.db, COLL_COMMENTS, { id, domain: domain.code } );
+
+		await liwe_event_emit( req, COMMENTS_EVENT_DELETE, { id: comment.id, domain: domain.code, module: comment.module, id_obj: comment.id_obj } );
+
+		return cback ? cback( null, true ) : resolve( true );
 		/*=== f2c_end delete_comments_admin_del ===*/
 	} );
 };

@@ -80,7 +80,7 @@ export const init = ( liwe: ILiWE ) => {
 		} );
 	} );
 
-	app.delete ( '/apicomments/admin/del', perms( [ "comments.admin" ] ), ( req: ILRequest, res: ILResponse ) => {
+	app.delete ( '/api/comments/admin/del', perms( [ "comments.admin" ] ), ( req: ILRequest, res: ILResponse ) => {
 		const { id, ___errors } = typed_dict( req.body, [
 			{ name: "id", type: "string", required: true }
 		] );
