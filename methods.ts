@@ -205,7 +205,6 @@ export const comments_db_init = ( liwe: ILiWE, cback: LCback = null ): Promise<b
 			{ type: "persistent", fields: [ "id_obj" ], unique: false },
 			{ type: "persistent", fields: [ "id_user" ], unique: false },
 			{ type: "persistent", fields: [ "visible" ], unique: false },
-			{ type: "fulltext", fields: [ "text" ], unique: false },
 		], { drop: false } );
 
 		/*=== f2c_start comments_db_init ===*/
