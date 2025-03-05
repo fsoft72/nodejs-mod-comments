@@ -23,10 +23,12 @@ const COLL_COMMENTS = "comments";
 
 /*=== f2c_start __file_header === */
 import { system_domain_get_by_session } from '../system/methods';
-import { adb_collection_init, adb_del_one, adb_find_all, adb_find_one, adb_record_add } from '../../liwe/db/arango';
+import { adb_collection_init, adb_del_all, adb_del_one, adb_find_all, adb_find_one, adb_record_add } from '../../liwe/db/arango';
 import { mkid } from '../../liwe/utils';
-import { liwe_event_emit } from '../../liwe/events';
+import { liwe_event_emit, LiWEEventSingleResponse } from '../../liwe/events';
 import { COMMENTS_EVENT_CREATE, COMMENTS_EVENT_DELETE } from './events';
+import { INSTAPOST_POI_REMOVED, INSTAPOST_POST_REMOVED } from '../instapost/events';
+import { liwe_event_register } from '../../liwe/events';
 /*=== f2c_end __file_header ===*/
 
 // {{{ post_comments_add ( req: ILRequest, module: string, id_obj: string, text: string, visible?: boolean, cback: LCBack = null ): Promise<CommentType>
@@ -172,12 +174,46 @@ export const comments_list = ( req: ILRequest, id_obj: string, module: string, c
 	return new Promise( async ( resolve, reject ) => {
 		/*=== f2c_start comments_list ===*/
 		const err: ILError = { message: "Error listing comments" };
-		const comments: CommentType[] = await adb_find_all( req.db, COLL_COMMENTS, { id_obj, module, visible: true }, CommentTypeKeys );
+		const domain = await system_domain_get_by_session( req );
+		const comments: CommentType[] = await adb_find_all( req.db, COLL_COMMENTS, { domain, id_obj, module, visible: true }, CommentTypeKeys );
 		if ( !comments ) {
 			return cback ? cback( err.message ) : reject( err.message );
 		}
 		return cback ? cback( null, comments ) : resolve( comments );
 		/*=== f2c_end comments_list ===*/
+	} );
+};
+// }}}
+
+// {{{ comments_clear ( req: ILRequest, id_obj: string, module: string, cback: LCBack = null ): Promise<string[]>
+/**
+ *
+ * # Delete Comments
+ * Delete all comments for a specific object identified by domain, module and object ID.
+ * ## Operations
+ * - Check if object exists
+ *
+ * @param req -  [req]
+ * @param id_obj - ID Object [req]
+ * @param module - Module [req]
+ *
+ * @return : string
+ *
+ */
+export const comments_clear = ( req: ILRequest, id_obj: string, module: string, cback: LCback = null ): Promise<string[]> => {
+	return new Promise( async ( resolve, reject ) => {
+		/*=== f2c_start comments_clear ===*/
+		const err: ILError = { message: "Error deleting comments" };
+		const domain = await system_domain_get_by_session( req );
+
+		const commentsIds: string[] = await adb_del_all( req.db, COLL_COMMENTS, { domain, id_obj, module, visible: true } );
+
+		if ( !commentsIds ) {
+			return cback ? cback( err.message ) : reject( err.message );
+		}
+
+		return cback ? cback( null, commentsIds ) : resolve( commentsIds );
+		/*=== f2c_end comments_clear ===*/
 	} );
 };
 // }}}
@@ -205,10 +241,21 @@ export const comments_db_init = ( liwe: ILiWE, cback: LCback = null ): Promise<b
 			{ type: "persistent", fields: [ "id_obj" ], unique: false },
 			{ type: "persistent", fields: [ "id_user" ], unique: false },
 			{ type: "persistent", fields: [ "visible" ], unique: false },
+			{ type: "fulltext", fields: [ "text" ], unique: false },
 		], { drop: false } );
 
 		/*=== f2c_start comments_db_init ===*/
+		liwe_event_register( 'instapost', INSTAPOST_POST_REMOVED, async ( req: ILRequest, data: { id: string, id_author: string; } ) => {
+			const action = await comments_clear( req, data.id, 'instapost' );
+			const res: LiWEEventSingleResponse = { ids: action };
+			return res;
+		} );
 
+		liwe_event_register( 'instapost', INSTAPOST_POI_REMOVED, async ( req: ILRequest, data: { id: string, id_author: string; } ) => {
+			const action = await comments_clear( req, data.id, 'instapost' );
+			const res: LiWEEventSingleResponse = { ids: action };
+			return res;
+		} );
 		/*=== f2c_end comments_db_init ===*/
 	} );
 };
