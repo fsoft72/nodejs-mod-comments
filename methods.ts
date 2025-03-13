@@ -206,7 +206,7 @@ export const comments_clear = ( req: ILRequest, id_obj: string, module: string, 
 		const err: ILError = { message: "Error deleting comments" };
 		const domain = await system_domain_get_by_session( req );
 
-		const commentsIds: string[] = await adb_del_all( req.db, COLL_COMMENTS, { domain, id_obj, module, visible: true } );
+		const commentsIds: string[] = await adb_del_all( req.db, COLL_COMMENTS, { domain, id_obj, module } );
 
 		if ( !commentsIds ) {
 			return cback ? cback( err.message ) : reject( err.message );
