@@ -245,17 +245,6 @@ export const comments_db_init = ( liwe: ILiWE, cback: LCback = null ): Promise<b
 		], { drop: false } );
 
 		/*=== f2c_start comments_db_init ===*/
-		liwe_event_register( 'instapost', INSTAPOST_POST_REMOVED, async ( req: ILRequest, data: { id: string, id_author: string; } ) => {
-			const action = await comments_clear( req, data.id, 'instapost' );
-			const res: LiWEEventSingleResponse = { ids: action };
-			return res;
-		} );
-
-		liwe_event_register( 'instapost', INSTAPOST_POI_REMOVED, async ( req: ILRequest, data: { id: string, id_author: string; } ) => {
-			const action = await comments_clear( req, data.id, 'instapost' );
-			const res: LiWEEventSingleResponse = { ids: action };
-			return res;
-		} );
 		/*=== f2c_end comments_db_init ===*/
 	} );
 };
