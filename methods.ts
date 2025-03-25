@@ -27,8 +27,6 @@ import { adb_collection_init, adb_del_all, adb_del_one, adb_find_all, adb_find_o
 import { mkid } from '../../liwe/utils';
 import { liwe_event_emit, LiWEEventSingleResponse } from '../../liwe/events';
 import { COMMENTS_EVENT_CREATE, COMMENTS_EVENT_DELETE } from './events';
-import { INSTAPOST_POI_REMOVED, INSTAPOST_POST_REMOVED } from '../instapost/events';
-import { liwe_event_register } from '../../liwe/events';
 /*=== f2c_end __file_header ===*/
 
 // {{{ post_comments_add ( req: ILRequest, module: string, id_obj: string, text: string, visible?: boolean, cback: LCBack = null ): Promise<CommentType>
@@ -175,7 +173,7 @@ export const comments_list = ( req: ILRequest, id_obj: string, module: string, c
 		/*=== f2c_start comments_list ===*/
 		const err: ILError = { message: "Error listing comments" };
 		const domain = await system_domain_get_by_session( req );
-		const comments: CommentType[] = await adb_find_all( req.db, COLL_COMMENTS, { domain, id_obj, module, visible: true }, CommentTypeKeys );
+		const comments: CommentType[] = await adb_find_all( req.db, COLL_COMMENTS, { domain: domain.code, id_obj, module, visible: true }, CommentTypeKeys );
 		if ( !comments ) {
 			return cback ? cback( err.message ) : reject( err.message );
 		}
@@ -206,7 +204,7 @@ export const comments_clear = ( req: ILRequest, id_obj: string, module: string, 
 		const err: ILError = { message: "Error deleting comments" };
 		const domain = await system_domain_get_by_session( req );
 
-		const commentsIds: string[] = await adb_del_all( req.db, COLL_COMMENTS, { domain, id_obj, module } );
+		const commentsIds: string[] = await adb_del_all( req.db, COLL_COMMENTS, { domain: domain.code, id_obj, module } );
 
 		if ( !commentsIds ) {
 			return cback ? cback( err.message ) : reject( err.message );
