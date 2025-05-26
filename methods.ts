@@ -27,6 +27,7 @@ import { adb_collection_init, adb_del_all, adb_del_one, adb_find_all, adb_find_o
 import { mkid } from '../../liwe/utils';
 import { liwe_event_emit, LiWEEventSingleResponse } from '../../liwe/events';
 import { COMMENTS_EVENT_CREATE, COMMENTS_EVENT_DELETE } from './events';
+import { perm_available } from '../../liwe/auth';
 /*=== f2c_end __file_header ===*/
 
 // {{{ post_comments_add ( req: ILRequest, module: string, id_obj: string, text: string, visible?: boolean, cback: LCBack = null ): Promise<CommentType>
@@ -53,7 +54,7 @@ export const post_comments_add = ( req: ILRequest, module: string, id_obj: strin
 	return new Promise( async ( resolve, reject ) => {
 		/*=== f2c_start post_comments_add ===*/
 		const domain = await system_domain_get_by_session( req );
-		const err: ILError = { message: "Error adding comment" };
+		const err: ILError = { message: _("Error adding comment") };
 		const id_user = req.user.id;
 		const id = mkid( 'comment' );
 		const res = await adb_record_add( req.db, COLL_COMMENTS, { id, domain: domain.code, module, id_obj, text, id_user, visible: visible || true } );
@@ -90,7 +91,23 @@ export const delete_comments_delete = ( req: ILRequest, id: string, cback: LCbac
 		const domain = await system_domain_get_by_session( req );
 		const id_user = req.user.id;
 
-		const res = await adb_del_one( req.db, COLL_COMMENTS, { id, id_user, domain: domain.code } );
+		const comment = await adb_find_one( req.db, COLL_COMMENTS, { id, domain: domain.code } );
+		if ( !comment ) {
+			const err: ILError = { message: _( 'Comment not found' ) };
+			return cback ? cback( err ) : reject( err );
+		}
+
+		if ( !perm_available( req.user, [ 'instapost.admin' ] ) && comment.id_user != req.user?.id ) {
+			const err: ILError = { message: _( 'Forbidden' ) };
+			return cback ? cback( err ) : reject( err );
+		}
+
+		try{
+			const res = await adb_del_one( req.db, COLL_COMMENTS, { id, id_user, domain: domain.code } );
+		} catch ( e ) {
+			const err: ILError = { message: _( 'Error deleting comment' ) };
+			return cback ? cback( err ) : reject( err );
+		}
 		/*=== f2c_end delete_comments_delete ===*/
 	} );
 };
@@ -140,7 +157,18 @@ export const delete_comments_admin_del = ( req: ILRequest, id: string, cback: LC
 		const domain = await system_domain_get_by_session( req );
 
 		const comment = await adb_find_one( req.db, COLL_COMMENTS, { id, domain: domain.code } );
-		const res = await adb_del_one( req.db, COLL_COMMENTS, { id, domain: domain.code } );
+
+		if ( !comment ) {
+			const err: ILError = { message: _( 'Comment not found' ) };
+			return cback ? cback( err ) : reject( err );
+		}
+
+		try {
+			const res = await adb_del_one( req.db, COLL_COMMENTS, { id, domain: domain.code } );
+		} catch ( e ) {
+			const err: ILError = { message: _( 'Error deleting comment' ) };
+			return cback ? cback( err ) : reject( err );
+		}
 
 		await liwe_event_emit( req, COMMENTS_EVENT_DELETE, { id: comment.id, domain: domain.code, module: comment.module, id_obj: comment.id_obj } );
 
