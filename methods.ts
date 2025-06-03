@@ -23,7 +23,7 @@ const COLL_COMMENTS = "comments";
 
 /*=== f2c_start __file_header === */
 import { system_domain_get_by_session } from '../system/methods';
-import { adb_collection_init, adb_del_all, adb_del_one, adb_find_all, adb_find_one, adb_record_add } from '../../liwe/db/arango';
+import { adb_collection_init, adb_count, adb_del_all, adb_del_one, adb_find_all, adb_find_one, adb_record_add } from '../../liwe/db/arango';
 import { mkid } from '../../liwe/utils';
 import { liwe_event_emit, LiWEEventSingleResponse } from '../../liwe/events';
 import { COMMENTS_EVENT_CREATE, COMMENTS_EVENT_DELETE } from './events';
@@ -103,11 +103,15 @@ export const delete_comments_delete = ( req: ILRequest, id: string, cback: LCbac
 		}
 
 		try{
-			const res = await adb_del_one( req.db, COLL_COMMENTS, { id, id_user, domain: domain.code } );
+			await adb_del_one( req.db, COLL_COMMENTS, { id, id_user, domain: domain.code } );
 		} catch ( e ) {
 			const err: ILError = { message: _( 'Error deleting comment' ) };
 			return cback ? cback( err ) : reject( err );
 		}
+
+		liwe_event_emit( req, COMMENTS_EVENT_DELETE, { id: comment.id, domain: domain.code, module: comment.module, id_obj: comment.id_obj } );
+
+		return cback ? cback( null, true ) : resolve( true );
 		/*=== f2c_end delete_comments_delete ===*/
 	} );
 };
@@ -244,6 +248,38 @@ export const comments_clear = ( req: ILRequest, id_obj: string, module: string, 
 };
 // }}}
 
+// {{{ comments_count ( req: ILRequest, id_obj: string, module: string, visible: boolean = true, cback: LCBack = null ): Promise<number>
+/**
+ *
+ * @param req -  [req]
+ * @param id_obj -  [req]
+ * @param module -  [req]
+ * @param visible - count only visible [opt]
+ *
+ * @return : number
+ *
+ */
+export const comments_count = ( req: ILRequest, id_obj: string, module: string, visible: boolean = true, cback: LCback = null ): Promise<number> => {
+	return new Promise( async ( resolve, reject ) => {
+		/*=== f2c_start comments_count ===*/
+		const err: ILError = { message: _("Count returns NULL") };
+		const domain = await system_domain_get_by_session( req );
+
+		try {
+			const count = await adb_count( req.db, COLL_COMMENTS, { domain: domain.code, id_obj, module, visible: visible } );
+			if ( count === null ) {
+				return cback ? cback( err.message ) : reject( err.message );
+			}
+			return cback ? cback( null, count ) : resolve( count );
+		} catch ( e ) {
+			const err: ILError = { message: _( 'Error counting comments' ) };
+			return cback ? cback( err ) : reject( err );
+		}
+		/*=== f2c_end comments_count ===*/
+	} );
+};
+// }}}
+
 // {{{ comments_db_init ( liwe: ILiWE, cback: LCBack = null ): Promise<boolean>
 /**
  *
@@ -271,6 +307,7 @@ export const comments_db_init = ( liwe: ILiWE, cback: LCback = null ): Promise<b
 		], { drop: false } );
 
 		/*=== f2c_start comments_db_init ===*/
+
 		/*=== f2c_end comments_db_init ===*/
 	} );
 };

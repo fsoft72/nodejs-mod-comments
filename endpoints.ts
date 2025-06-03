@@ -13,7 +13,7 @@ import {
 	// endpoints function
 	delete_comments_admin_del, delete_comments_delete, get_comments_admin_list, post_comments_add,
 	// functions
-	comments_clear, comments_list,
+	comments_clear, comments_count, comments_list,
 } from './methods';
 
 import {
